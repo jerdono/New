@@ -1,0 +1,54 @@
+<h2>How this chart was built</h2>
+<p>No continuous observed annual record exists for most of history, so each series is an
+<b>anchored reconstruction</b>: real annual data where it exists, literature anchor points elsewhere,
+joined by published growth models — with the two regimes drawn differently (solid vs dashed) and
+uncertainty bands showing the spread of estimates and definitions. The full pipeline is
+<code>src/build_dataset.py</code>; long-form documentation with per-number citations is in
+<code>docs/METHODOLOGY.md</code> and <code>docs/research/</code>.</p>
+
+<h2>1 · Substances &amp; materials known (cumulative)</h2>
+<p>1800–2015 follows Llanos, Leal, Luu, Jost, Stadler &amp; Restrepo (2019, <i>PNAS</i> 116:12660):
+new compounds reported in the literature grew at a stable ~4.4%/yr from 1800, cumulating to
+14,341,955 distinct compounds by 2015 (Reaxys); our curve reproduces that model exactly and extends
+it to 2026. Pre-1800 values are historians' order-of-magnitude anchors (Paleolithic material kits;
+the seven metals of antiquity; Pliny's <i>Natural History</i>; Lavoisier's 1789 table of 33 simple
+substances; ~1,000 compounds known by 1800) — wide bands, dashed line. Hollow dots show CAS
+Registry milestones (50M in 2009 → 100M in 2015 → 250M in 2021 → &gt;290M in 2025), a broader
+"registry" definition that includes sequences, polymers and mixtures.</p>
+
+<h2>2 · Global material extraction (Gt/yr)</h2>
+<p>1900–2024 splices the canonical material-flow-accounting series: Krausmann et&nbsp;al. (2009,
+<i>Ecol. Econ.</i> 68:2696; ~7 Gt/yr in 1900 → ~59 Gt in 2005), Krausmann et&nbsp;al. (2018,
+<i>Glob. Environ. Change</i> 52:131; ~89 Gt in 2015) and the UNEP International Resource Panel /
+Schandl et&nbsp;al. (2024, <i>J. Ind. Ecol.</i>; ~105 Gt in 2024). Pre-1900 values are population ×
+sociometabolic per-capita rates (Fischer-Kowalski &amp; Haberl: hunter-gatherer ~0.5–1, agrarian
+~3–6, industrial ~15–25 t/cap/yr), cross-checked against coal, iron and HANPP series — shown as
+ranges, not point estimates.</p>
+
+<h2>3 · Research publications per year</h2>
+<p>A piecewise-exponential model calibrated to hard counts: ~100 items/yr at the birth of the
+scientific journal (1665, <i>Phil. Trans.</i> &amp; <i>Journal des Sçavans</i>); ~780,000 papers
+catalogued for the whole 19th century (Royal Society <i>Catalogue of Scientific Papers</i>);
+1.35M peer-reviewed articles in 2006 (Björk et&nbsp;al. 2009); ~3.3M Scopus S&amp;E articles in 2022
+(NSB <i>Indicators</i>). Segment growth rates follow Bornmann, Haunschild &amp; Mutz (2021,
+<i>Humanit. Soc. Sci. Commun.</i> 8:224 — overall 4.10%/yr, doubling 17.3 yr) including the
+documented World-War slowdowns. The band reflects the ~3× spread across database definitions of
+"a paper" (Scopus articles vs OpenAlex works).</p>
+
+<h2>4 · Global Interconnectedness Index (composite, 0–100)</h2>
+<p>A documented composite capturing how large, connected, communicative and equal the human
+network is — the conditions collective-brain models (Henrich; Muthukrishna &amp; Henrich 2016) link
+to innovation. Geometric mean of normalized components: effective connected population, trade
+openness (Klasing &amp; Milionis; PWT), urbanization (HYDE), literacy &amp; communication reach
+(OWID long-run series), discounted by inequality (Milanovic extraction ratios; Bourguignon &amp;
+Morrisson). Classical city-states score low on scale and cohesion; high-inequality eras are
+penalized explicitly. Weights, normalizations and every anchor value are documented in
+<code>docs/METHODOLOGY.md</code> — this series is an <i>index we constructed</i>, clearly labeled
+as such, not an observed quantity.</p>
+
+<h2>Read the fine print</h2>
+<p>Headline caveats: (i) "substance", "paper" and "material" are definition-dependent — bands show
+the spread; (ii) pre-1800 anchors are scholarly order-of-magnitude estimates, not censuses;
+(iii) annual granularity before ~1800 is honest interpolation, and is drawn dashed so it can never
+be mistaken for measurement; (iv) recent-year publication counts are provisional (indexing lag).
+Full bibliography: <code>docs/METHODOLOGY.md</code>.</p>

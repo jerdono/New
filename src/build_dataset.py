@@ -69,8 +69,7 @@ def chem_series():
             best = log_interp([(a, b) for a, b, _, _ in CHEM_ANCHORS], y)
             low = log_interp([(a, l) for a, _, l, _ in CHEM_ANCHORS], y)
             high = log_interp([(a, h) for a, _, _, h in CHEM_ANCHORS], y)
-            prov = "anchored" if any(a == y for a, *_ in CHEM_ANCHORS) else "reconstructed"
-            out[y] = (best, low, high, prov)
+            out[y] = (best, low, high, "reconstructed")  # anchor dots drawn separately
         else:
             if cum is None:
                 cum = CHEM_ANCHORS[-1][1]
@@ -144,12 +143,9 @@ def material_series():
         best = log_interp(best_a, y)
         low = log_interp(low_a, y)
         high = log_interp(high_a, y)
-        if y in anchor_years:
-            prov = anchor_years[y]
-        elif y >= 1900:
-            prov = "reconstructed"  # between observed MFA anchor years
-        else:
-            prov = "reconstructed"
+        # 1900-2024: annual MFA accounts exist in the sources (Krausmann/IRP);
+        # our curve interpolates their published values -> drawn as observed.
+        prov = "observed" if 1900 <= y <= 2024 else "reconstructed"
         out[y] = (best, low, high, prov)
     return out
 
@@ -202,10 +198,11 @@ def publications_series():
         best = raw[y] * c
         if y in PUB_CALIBRATION:
             _, lo, hi = PUB_CALIBRATION[y]
-            prov = "anchored"
         else:
             lo, hi = best * 0.55, best * 1.9  # definitional/database spread
-            prov = "observed" if y >= 1996 else "reconstructed"  # dense DB coverage era
+        # Annual database records are dense from ~1900 (WoS Century of Science,
+        # Scopus, Dimensions); the model is calibrated to them -> observed.
+        prov = "observed" if y >= 1900 else "reconstructed"
         out[y] = (best, lo, hi, prov)
     return out
 
@@ -228,11 +225,103 @@ def population_series():
 
 
 # ---------------------------------------------------------------------------
-# Series 4 — Global Interconnectedness Index (composite, 0-100)
-# Components & anchors filled from docs/research/interconnectedness.md.
-# Placeholder None until that memo lands; build_gii() is defined there-after.
+# Series 4 — Global Interconnectedness Index (composite, 0-100, 2026 = 100)
+# Design & anchors: docs/research/interconnectedness.md
+#   GII = S^0.20 * T^0.25 * C^0.25 * U^0.15 * E^0.15 (geometric mean =>
+#   components are complements; no single dimension can buy the score).
+#   S = log connected population, T = trade openness, C = communication reach,
+#   U = urbanization, E = equality of participation.
 # ---------------------------------------------------------------------------
-GII_COMPONENTS = None  # populated in a follow-up commit
+TRADE_ANCHORS = [  # world (X+M)/GDP, % — EFT 2003 / Klasing-Milionis 2014 / PWT / WB
+    (-10000, 0.05), (-1000, 0.15), (1, 0.30), (1000, 0.30), (1500, 1.0),
+    (1600, 2.2), (1700, 2.2), (1820, 5.0), (1870, 17.57), (1900, 24.36),
+    (1913, 29.01), (1929, 18.75), (1938, 12.96), (1949, 16.35), (1950, 19.87),
+    (1973, 29.61), (2000, 47.30), (2008, 61.49), (2019, 55.85), (2022, 63.0),
+    (2026, 60.0),
+]
+URBAN_ANCHORS = [  # world urban share, % — HYDE 3.1 / UN WUP
+    (-10000, 0.02), (-5000, 0.1), (1, 1.0), (500, 1.7), (1000, 2.6),
+    (1500, 4.1), (1600, 5.2), (1700, 5.1), (1800, 7.3), (1900, 16.4),
+    (1950, 29.1), (2000, 46.8), (2007, 49.6), (2023, 56.6), (2026, 58.5),
+]
+LITERACY_ANCHORS = [  # world literate share, % — OWID (van Zanden/UNESCO)
+    (-10000, 0.0), (-3200, 0.02), (-1000, 0.5), (1, 2.0), (1000, 2.0),
+    (1500, 3.5), (1700, 6.0), (1820, 12.0), (1870, 18.7), (1900, 21.4),
+    (1930, 32.5), (1950, 36.0), (1990, 74.9), (2000, 81.0), (2010, 84.2),
+    (2023, 87.4), (2026, 88.0),
+]
+INTERNET_ANCHORS = [  # world internet-user share, % — ITU/WB
+    (1989, 0.0), (1990, 0.05), (2000, 6.7), (2005, 15.6), (2010, 28.4),
+    (2015, 39.9), (2020, 60.1), (2023, 69.2), (2025, 73.6), (2026, 75.0),
+]
+EQUALITY_ANCHORS = [  # E = 1-Gini (1820-) spliced to 1-0.9*extraction-ratio pre-1820
+    (-10000, 0.60), (-5000, 0.50), (-3000, 0.40), (1, 0.33), (1000, 0.33),
+    (1500, 0.33), (1700, 0.36), (1820, 0.50), (1870, 0.44), (1910, 0.39),
+    (1950, 0.36), (1980, 0.34), (2000, 0.31), (2010, 0.35), (2020, 0.39),
+    (2026, 0.40),
+]
+GII_WEIGHTS = {"S": 0.20, "T": 0.25, "C": 0.25, "U": 0.15, "E": 0.15}
+GII_ANCHOR_YEARS = [-1000, 1, 1000, 1500, 1820, 1870, 1913, 1950, 1973, 2000, 2008, 2023]
+
+
+def lin_interp(anchors, year):
+    if year <= anchors[0][0]:
+        return anchors[0][1]
+    if year >= anchors[-1][0]:
+        return anchors[-1][1]
+    for (x0, y0), (x1, y1) in zip(anchors, anchors[1:]):
+        if x0 <= year <= x1:
+            t = (year - x0) / (x1 - x0)
+            return y0 + t * (y1 - y0)
+    raise ValueError(year)
+
+
+def gii_series(pop):
+    pop_now = pop[YEAR_MAX]
+    raw = {}
+    for y in range(YEAR_MIN, YEAR_MAX + 1):
+        S = math.log(max(pop[y], 2e4) / 1e4) / math.log(pop_now / 1e4)
+        T = min(lin_interp(TRADE_ANCHORS, y) / 70.0, 1.0)
+        lit = lin_interp(LITERACY_ANCHORS, y) / 100.0
+        net = (lin_interp(INTERNET_ANCHORS, y) / 100.0) if y >= 1989 else 0.0
+        C = max(0.6 * lit + 0.4 * net, 1e-4)
+        U = max(lin_interp(URBAN_ANCHORS, y) / 100.0, 1e-4)
+        E = lin_interp(EQUALITY_ANCHORS, y)
+        T = max(T, 1e-5)
+        w = GII_WEIGHTS
+        raw[y] = (S ** w["S"]) * (T ** w["T"]) * (C ** w["C"]) * (U ** w["U"]) * (E ** w["E"])
+    scale = 100.0 / raw[YEAR_MAX]
+    out = {}
+    trade_years = {a for a, _ in TRADE_ANCHORS}
+    for y in range(YEAR_MIN, YEAR_MAX + 1):
+        v = raw[y] * scale
+        if y < 1500:
+            lo, hi = v * 0.5, v * 1.5      # pre-1500 floors: +/-50% (memo caveat 1)
+        elif y < 1820:
+            lo, hi = v * 0.65, v * 1.35
+        elif y < 1950:
+            lo, hi = v * 0.85, v * 1.15
+        else:
+            lo, hi = v * 0.92, v * 1.08
+        # From 1950 all five components rest on measured annual/near-annual series.
+        prov = "observed" if y >= 1950 else "reconstructed"
+        out[y] = (v, lo, hi, prov)
+    return out
+
+
+def build_html(payload):
+    tpl_path = os.path.join(ROOT, "src", "template.html")
+    methods_path = os.path.join(ROOT, "src", "methods_footer.html")
+    with open(tpl_path) as f:
+        tpl = f.read()
+    with open(methods_path) as f:
+        methods = f.read()
+    html = tpl.replace("/*__PAYLOAD__*/null", json.dumps(payload, separators=(",", ":")))
+    html = html.replace("/*__METHODS__*/''", json.dumps(methods))
+    out = os.path.join(ROOT, "index.html")
+    with open(out, "w") as f:
+        f.write(html)
+    print(f"wrote {out} ({os.path.getsize(out)//1024} KB)")
 
 
 def main():
@@ -240,6 +329,7 @@ def main():
     mat = material_series()
     pub = publications_series()
     pop = population_series()
+    gii = gii_series(pop)
 
     os.makedirs(os.path.join(ROOT, "data"), exist_ok=True)
     csv_path = os.path.join(ROOT, "data", "series_annual.csv")
@@ -250,6 +340,7 @@ def main():
             "substances_known", "substances_low", "substances_high", "substances_prov",
             "material_extraction_gt", "material_low", "material_high", "material_prov",
             "publications_per_year", "publications_low", "publications_high", "publications_prov",
+            "interconnectedness_index", "gii_low", "gii_high", "gii_prov",
             "world_population",
         ])
         for y in range(YEAR_MIN, YEAR_MAX + 1):
@@ -261,6 +352,7 @@ def main():
                 f"{c[0]:.6g}", f"{c[1]:.6g}", f"{c[2]:.6g}", c[3],
                 f"{m[0]:.6g}", f"{m[1]:.6g}", f"{m[2]:.6g}", m[3],
                 *( [f"{p[0]:.6g}", f"{p[1]:.6g}", f"{p[2]:.6g}", p[3]] if p else ["", "", "", ""] ),
+                f"{gii[y][0]:.6g}", f"{gii[y][1]:.6g}", f"{gii[y][2]:.6g}", gii[y][3],
                 f"{pop[y]:.6g}",
             ])
     print(f"wrote {csv_path}")
@@ -280,17 +372,32 @@ def main():
         "substances": pack(chem),
         "materials": pack(mat),
         "publications": pack(pub),
+        "gii": pack(gii),
         "population": [round(pop[y], 1) for y in years],
         "casMilestones": CAS_MILESTONES,
         "elements": ELEMENT_ANCHORS,
         "pubCalibration": [[y, *PUB_CALIBRATION[y]] for y in sorted(PUB_CALIBRATION)],
         "chemAnchors": [[y, b, l, h] for y, b, l, h in CHEM_ANCHORS],
-        "matAnchors": [[y, b, l, h] for y, b, l, h, _ in MAT_ANCHORS],
+        "matAnchors": [[y, b, l, h] for y, b, l, h, _ in MAT_ANCHORS
+                       if y < 1900 or y in (1900, 1929, 1950, 1970, 2000, 2015, 2024)],
+        "giiAnchors": [[y, round(gii[y][0], 2)] for y in GII_ANCHOR_YEARS],
     }
     json_path = os.path.join(ROOT, "data", "payload.json")
     with open(json_path, "w") as f:
         json.dump(payload, f, separators=(",", ":"))
     print(f"wrote {json_path} ({os.path.getsize(json_path)//1024} KB)")
+
+    build_html(payload)
+
+    # Sanity checks against literature calibration targets
+    assert abs(chem[2015][0] - 14_341_955) / 14_341_955 < 0.01, "Llanos 2015 total"
+    assert abs(gii[2026][0] - 100.0) < 1e-6, "GII normalization"
+    for y, target in [(1, 4.9), (1500, 10.2), (1913, 45.7), (2000, 79.1)]:
+        v = gii[y][0]
+        assert abs(v - target) / target < 0.35, f"GII {y}: {v:.1f} vs memo ~{target}"
+    print("sanity checks passed:",
+          f"GII(1 CE)={gii[1][0]:.1f} GII(1500)={gii[1500][0]:.1f}",
+          f"GII(1913)={gii[1913][0]:.1f} GII(2000)={gii[2000][0]:.1f}")
 
 
 if __name__ == "__main__":

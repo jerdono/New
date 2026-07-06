@@ -1,0 +1,538 @@
+<title>The Expanding Human Toolkit — materials, knowledge, interconnectedness</title>
+<style>
+  .viz-root {
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,0.10);
+    --s-chem: #2a78d6; --s-mat: #1baf7a; --s-pub: #4a3aa7; --s-gii: #008300;
+    --ctx: #b7b5ad;
+  }
+  @media (prefers-color-scheme: dark) {
+    .viz-root {
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+      --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+      --s-chem: #3987e5; --s-mat: #199e70; --s-pub: #9085e9; --s-gii: #008300;
+      --ctx: #5a5952;
+    }
+  }
+  :root[data-theme="light"] .viz-root {
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-3: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,0.10);
+    --s-chem: #2a78d6; --s-mat: #1baf7a; --s-pub: #4a3aa7; --s-gii: #008300;
+    --ctx: #b7b5ad;
+  }
+  :root[data-theme="dark"] .viz-root {
+    --surface-1: #1a1a19; --page: #0d0d0d;
+    --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-3: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+    --s-chem: #3987e5; --s-mat: #199e70; --s-pub: #9085e9; --s-gii: #008300;
+    --ctx: #5a5952;
+  }
+  .viz-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--ink-1);
+    min-height: 100vh; padding: 24px 12px 48px;
+  }
+  .frame { max-width: 1060px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 650; margin: 0 0 4px; }
+  .sub { color: var(--ink-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 16px; max-width: 72ch; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--ring); border-radius: 12px;
+    padding: 18px 18px 10px; margin-bottom: 16px;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .controls .grp { display: flex; gap: 0; border: 1px solid var(--ring); border-radius: 8px; overflow: hidden; }
+  .controls button {
+    font: inherit; font-size: 12.5px; padding: 5px 11px; border: 0; cursor: pointer;
+    background: transparent; color: var(--ink-2);
+  }
+  .controls button[aria-pressed="true"] { background: var(--ink-1); color: var(--surface-1); }
+  .prov-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 2px 0 8px; font-size: 12px; color: var(--ink-2); align-items: center; }
+  .prov-legend svg { vertical-align: -3px; }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--ink-1); }
+  .panel-unit { font-size: 11.5px; color: var(--ink-3); font-weight: 400; }
+  .key-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  #chart { width: 100%; display: block; }
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--surface-1); border: 1px solid var(--ring); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18); padding: 9px 12px; font-size: 12.5px;
+    min-width: 230px; color: var(--ink-1);
+  }
+  .tooltip .tt-year { font-weight: 650; margin-bottom: 6px; }
+  .tooltip table { border-collapse: collapse; width: 100%; }
+  .tooltip td { padding: 1.5px 0; vertical-align: baseline; }
+  .tooltip .tt-key { width: 16px; }
+  .tooltip .tt-key span { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: 3px; }
+  .tooltip .tt-val { font-weight: 620; white-space: nowrap; padding-right: 8px; }
+  .tooltip .tt-name { color: var(--ink-2); }
+  .tooltip .tt-prov { color: var(--ink-3); font-size: 11px; padding-left: 6px; }
+  details.tblv { margin-top: 4px; }
+  details.tblv summary { cursor: pointer; font-size: 13px; color: var(--ink-2); padding: 6px 0; }
+  .tbl-wrap { overflow-x: auto; }
+  table.datatable { border-collapse: collapse; font-size: 12px; width: 100%; }
+  table.datatable th, table.datatable td {
+    text-align: right; padding: 4px 10px; border-bottom: 1px solid var(--grid);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  table.datatable th { color: var(--ink-2); font-weight: 600; position: sticky; top: 0; background: var(--surface-1); }
+  table.datatable td:first-child, table.datatable th:first-child { text-align: left; }
+  .note { font-size: 12px; color: var(--ink-3); line-height: 1.55; margin-top: 10px; }
+  .note a { color: inherit; }
+  .foot { font-size: 12px; color: var(--ink-3); line-height: 1.6; max-width: 90ch; }
+  .foot h2 { font-size: 13px; color: var(--ink-2); margin: 14px 0 4px; }
+</style>
+<div class="viz-root">
+  <div class="frame">
+    <h1>The Expanding Human Toolkit</h1>
+    <p class="sub">
+      Four long-run measures of humanity's collective capability, on one shared time axis:
+      the number of distinct <b>substances &amp; materials</b> we know, the sheer <b>tonnage of material</b> we
+      put through the economy each year, the <b>research papers</b> we publish each year, and a composite
+      <b>Global Interconnectedness Index</b>. Solid lines rest on annual source data; dashed lines are
+      model reconstructions between literature anchor points (dots). Shaded bands are uncertainty /
+      definitional ranges. Full methodology &amp; sources below.
+    </p>
+    <div class="card">
+      <div class="controls" role="toolbar" aria-label="Chart controls">
+        <div class="grp" id="rangeBtns"></div>
+        <div class="grp" id="modeBtns"></div>
+        <div class="grp"><button id="themeBtn" aria-pressed="false" title="Toggle dark mode">◐ theme</button></div>
+      </div>
+      <div class="prov-legend" id="provLegend"></div>
+      <svg id="chart" role="img" aria-label="Small-multiple time series chart of substances known, material extraction, publications per year, and interconnectedness index"></svg>
+      <details class="tblv">
+        <summary>Table view — milestone years (full annual CSV in <code>data/series_annual.csv</code>)</summary>
+        <div class="tbl-wrap"><table class="datatable" id="dataTable"></table></div>
+      </details>
+      <p class="note" id="chartNote"></p>
+    </div>
+    <div class="card foot" id="methodology"></div>
+  </div>
+  <div class="tooltip" id="tt"></div>
+</div>
+<script>
+const DATA = /*__PAYLOAD__*/null;
+
+// ---------- series registry ----------
+const SERIES = [
+  { id:'substances', name:'Substances & materials known', unit:'cumulative count', css:'--s-chem',
+    log:true, fmt:fmtCount, panelH:190 },
+  { id:'materials', name:'Global material extraction', unit:'gigatonnes per year', css:'--s-mat',
+    log:true, fmt:(v)=>fmtSig(v)+' Gt/yr', panelH:170 },
+  { id:'publications', name:'Research publications', unit:'papers per year', css:'--s-pub',
+    log:true, fmt:(v)=>fmtCount(v)+'/yr', panelH:170 },
+  { id:'gii', name:'Global Interconnectedness Index', unit:'composite, 0–100 (2026 = 100)', css:'--s-gii',
+    log:false, fmt:(v)=>fmtSig(v), panelH:170 },
+].filter(s => DATA[s.id] && DATA[s.id].v && DATA[s.id].v.some(x=>x!=null));
+
+const YEARS = DATA.substances.years;
+const NOW = DATA.meta.yearMax;
+
+// ---------- formatting ----------
+function fmtSig(v){
+  if (v>=100) return Math.round(v).toLocaleString('en-US');
+  if (Number.isInteger(v)) return String(v);
+  if (v>=10) return v.toFixed(1);
+  if (v>=1) return v.toFixed(2);
+  if (v>=0.01) return v.toFixed(3);
+  return v.toPrecision(2);
+}
+function fmtCount(v){
+  if (v>=1e9) return (v/1e9).toPrecision(3)+'B';
+  if (v>=1e6) return (v/1e6).toPrecision(3)+'M';
+  if (v>=1e3) return (v/1e3).toPrecision(3)+'k';
+  return fmtSig(v);
+}
+function fmtYear(y){ return y<=0 ? Math.abs(y).toLocaleString('en-US')+' BCE' : String(y); }
+
+// ---------- state ----------
+const RANGES = [
+  { key:'deep', label:'Deep time (10,000 BCE →)', from:-10000 },
+  { key:'r1500', label:'1500 →', from:1500 },
+  { key:'r1800', label:'1800 →', from:1800 },
+  { key:'r1900', label:'1900 →', from:1900 },
+];
+let state = { range:'r1500', mode:'panels' };
+
+// ---------- x scale ----------
+function makeX(rangeKey, x0, x1){
+  if (rangeKey==='deep'){
+    // log-compressed "years before 2036", reversed
+    const u = y => Math.log10(2036 - y);
+    const uMin = u(NOW), uMax = u(-10000);
+    return {
+      pos: y => x0 + (uMax - u(Math.min(y, NOW))) / (uMax - uMin) * (x1 - x0),
+      ticks: [-10000,-5000,-2000,1,1000,1500,1800,1900,1950,2000],
+    };
+  }
+  const from = RANGES.find(r=>r.key===rangeKey).from;
+  const span = NOW - from;
+  const step = span>400 ? 100 : span>220 ? 50 : span>120 ? 25 : 20;
+  const ticks = [];
+  for (let t=Math.ceil(from/step)*step; t<=NOW; t+=step) ticks.push(t);
+  return { pos: y => x0 + (y - from)/(NOW - from) * (x1 - x0), ticks, from };
+}
+
+// ---------- y scale ----------
+function makeY(vals, log, yTop, yBot){
+  const finite = vals.filter(v=>v!=null && isFinite(v) && (!log || v>0));
+  let lo = Math.min(...finite), hi = Math.max(...finite);
+  if (log){
+    lo = Math.pow(10, Math.floor(Math.log10(lo)));
+    hi = Math.pow(10, Math.ceil(Math.log10(hi)));
+    const L = Math.log10;
+    const ticks = [];
+    for (let e=Math.round(L(lo)); e<=Math.round(L(hi)); e++) ticks.push(Math.pow(10,e));
+    // thin ticks if too many
+    const keep = Math.ceil(ticks.length/6);
+    const tks = ticks.filter((_,i)=> i%keep===0 || i===ticks.length-1);
+    return { pos: v => yBot - (L(v)-L(lo))/(L(hi)-L(lo))*(yBot-yTop), ticks: tks, lo, hi };
+  }
+  lo = 0; hi = Math.ceil(hi/20)*20;
+  const ticks = []; for(let t=lo;t<=hi;t+=hi/4) ticks.push(t);
+  return { pos: v => yBot - (v-lo)/(hi-lo)*(yBot-yTop), ticks, lo, hi };
+}
+
+// ---------- svg helpers ----------
+const NS='http://www.w3.org/2000/svg';
+function el(name, attrs, parent){
+  const e=document.createElementNS(NS,name);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(e,s){ e.textContent=s; return e; }
+
+// ---------- layout & render ----------
+const svg = document.getElementById('chart');
+const MARGIN = { l: 64, r: 118, t: 8, b: 30, gap: 34 };
+let geo = null; // built per render: {panels:[{s, x, y, yTop, yBot}], width, xFrom}
+
+function visibleYears(rangeKey){
+  const from = rangeKey==='deep' ? -10000 : RANGES.find(r=>r.key===rangeKey).from;
+  const idx = [];
+  for (let i=0;i<YEARS.length;i++) if (YEARS[i]>=from) idx.push(i);
+  return idx;
+}
+
+function pathFrom(pts){
+  return pts.length ? 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L') : '';
+}
+
+// split indices into runs by provenance class: 'solid' (observed) vs 'dash' (reconstructed/anchored)
+function provClass(p){ return p==='o' ? 'solid' : 'dash'; }
+
+function render(){
+  svg.innerHTML='';
+  const width = Math.min(1060, Math.max(560, svg.parentNode.clientWidth-36));
+  const idx = visibleYears(state.range);
+  const overlay = state.mode==='overlay';
+  const panels = overlay ? [null] : SERIES;
+  const totalH = MARGIN.t + (overlay
+      ? 320 + MARGIN.b
+      : SERIES.reduce((a,s)=>a+s.panelH,0) + MARGIN.gap*(SERIES.length-1) + MARGIN.b);
+  svg.setAttribute('viewBox', `0 0 ${width} ${totalH}`);
+  svg.style.height = 'auto';
+  const x0=MARGIN.l, x1=width-MARGIN.r;
+  const X = makeX(state.range, x0, x1);
+  geo = { panels: [], width, X, idx, totalH, x0, x1 };
+
+  const css = getComputedStyle(document.querySelector('.viz-root'));
+  const C = name => css.getPropertyValue(name).trim();
+
+  let yCur = MARGIN.t;
+  if (!overlay){
+    for (const s of SERIES){
+      const yTop = yCur+22, yBot = yCur + s.panelH;
+      const d = DATA[s.id];
+      const vals = idx.map(i=>d.v[i]).concat(idx.map(i=>d.lo[i]), idx.map(i=>d.hi[i]));
+      const Y = makeY(vals, s.log, yTop, yBot);
+      drawPanel(s, d, X, Y, idx, yTop, yBot, C, x0, x1, yCur);
+      geo.panels.push({ s, Y, yTop, yBot });
+      yCur = yBot + MARGIN.gap;
+    }
+  } else {
+    const yTop = yCur+26, yBot = yCur+320;
+    drawOverlay(X, idx, yTop, yBot, C, x0, x1, yCur);
+    yCur = yBot;
+  }
+  // shared x axis on bottom of last panel already drawn per panel
+  drawCrosshairLayer(C);
+}
+
+function drawGridAndAxes(s, X, Y, yTop, yBot, C, x0, x1, unitLabel, title){
+  const g = el('g',{},svg);
+  // panel title
+  const t1 = el('text',{x:x0, y:yTop-8, fill:C('--ink-1'), 'font-size':'13','font-weight':'600'},g);
+  txt(t1,title);
+  let tw;
+  try { tw = t1.getBBox().width; } catch(e){ tw = title.length*7.8; }
+  const t2 = el('text',{x:x0+tw+12, y:yTop-8, fill:C('--ink-3'), 'font-size':'11.5'},g);
+  txt(t2, unitLabel);
+  // gridlines + y ticks
+  for (const tk of Y.ticks){
+    const y = Y.pos(tk);
+    el('line',{x1:x0,x2:x1,y1:y,y2:y,stroke:C('--grid'),'stroke-width':1},g);
+    const lab = el('text',{x:x0-8,y:y+3.5,'text-anchor':'end',fill:C('--ink-3'),'font-size':'11',style:'font-variant-numeric:tabular-nums'},g);
+    txt(lab, fmtCount(tk));
+  }
+  // x ticks
+  for (const tk of X.ticks){
+    const x = X.pos(tk);
+    if (x<x0-1||x>x1+1) continue;
+    el('line',{x1:x,x2:x,y1:yBot,y2:yBot+4,stroke:C('--axis'),'stroke-width':1},g);
+    const lab = el('text',{x, y:yBot+16,'text-anchor':'middle',fill:C('--ink-3'),'font-size':'11'},g);
+    txt(lab, fmtYear(tk));
+  }
+  el('line',{x1:x0,x2:x1,y1:yBot,y2:yBot,stroke:C('--axis'),'stroke-width':1},g);
+  return g;
+}
+
+function drawSeriesLine(g, d, X, Y, idx, color, s){
+  // uncertainty band
+  const bandPts=[], bandBack=[];
+  for (const i of idx){
+    if (d.lo[i]==null||d.hi[i]==null) continue;
+    const x=X.pos(YEARS[i]);
+    bandPts.push([x, Y.pos(Math.max(d.hi[i], Y.lo))]);
+    bandBack.push([x, Y.pos(Math.max(d.lo[i], Y.lo))]);
+  }
+  if (bandPts.length){
+    const dPath = pathFrom(bandPts)+'L'+bandBack.reverse().map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')+'Z';
+    el('path',{d:dPath, fill:color, opacity:0.10, stroke:'none'},g);
+  }
+  // provenance-split line
+  let run=[], runCls=null;
+  const flush=()=>{
+    if(run.length>1){
+      const p = el('path',{d:pathFrom(run), fill:'none', stroke:color,'stroke-width':2,
+        'stroke-linejoin':'round','stroke-linecap':'round'},g);
+      if (runCls==='dash'){ p.setAttribute('stroke-dasharray','5 4'); p.setAttribute('opacity','0.85'); }
+    }
+    run = run.length? [run[run.length-1]] : [];
+  };
+  for (const i of idx){
+    if (d.v[i]==null){ flush(); run=[]; runCls=null; continue; }
+    const cls = provClass(d.prov[i]);
+    const pt = [X.pos(YEARS[i]), Y.pos(Math.max(d.v[i], Y.lo||0))];
+    if (runCls!==null && cls!==runCls) flush();
+    runCls = cls;
+    run.push(pt);
+  }
+  flush();
+}
+
+function drawAnchors(g, anchors, X, Y, color, C, xFromYear){
+  for (const [y,b] of anchors){
+    if (y < xFromYear) continue;
+    el('circle',{cx:X.pos(y), cy:Y.pos(Math.max(b,Y.lo)), r:4.5, fill:color,
+      stroke:C('--surface-1'),'stroke-width':2},g);
+  }
+}
+
+function drawPanel(s, d, X, Y, idx, yTop, yBot, C, x0, x1, yCur){
+  const color = C(s.css);
+  const g = drawGridAndAxes(s, X, Y, yTop, yBot, C, x0, x1, s.unit, s.name);
+  drawSeriesLine(g, d, X, Y, idx, color, s);
+  const from = state.range==='deep' ? -10000 : RANGES.find(r=>r.key===state.range).from;
+  if (s.id==='substances'){
+    drawAnchors(g, DATA.chemAnchors, X, Y, color, C, from);
+    // CAS registry milestones — context entity in de-emphasis gray
+    for (const [y,v] of DATA.casMilestones){
+      if (y<from) continue;
+      el('circle',{cx:X.pos(y), cy:Y.pos(v), r:3.5, fill:'none', stroke:C('--ctx'),'stroke-width':2},g);
+    }
+    const lg = el('text',{x:x1+8, y:Y.pos(DATA.casMilestones[DATA.casMilestones.length-1][1])+4,
+      fill:C('--ink-3'),'font-size':'10.5'},g);
+    txt(lg,'CAS Registry ◦');
+  }
+  if (s.id==='materials') drawAnchors(g, DATA.matAnchors.map(a=>[a[0],a[1]]), X, Y, color, C, from);
+  if (s.id==='publications') drawAnchors(g, DATA.pubCalibration.map(a=>[a[0],a[1]]), X, Y, color, C, from);
+  if (s.id==='gii' && DATA.giiAnchors) drawAnchors(g, DATA.giiAnchors, X, Y, color, C, from);
+  // end label: last value
+  const lastI = idx[idx.length-1];
+  if (d.v[lastI]!=null){
+    const lab = el('text',{x:x1+8, y:Y.pos(Math.max(d.v[lastI],Y.lo||0))+4, fill:C('--ink-1'),
+      'font-size':'11.5','font-weight':'620'},svg);
+    txt(lab, s.fmt(d.v[lastI]));
+  }
+}
+
+function drawOverlay(X, idx, yTop, yBot, C, x0, x1, yCur){
+  // all series indexed to their 2026 value = 1, log axis
+  const L=Math.log10;
+  let lo=1e-9, hi=1;
+  const Y = { pos: v => yBot - (L(v)-L(lo))/(L(hi)-L(lo))*(yBot-yTop), ticks:[1e-9,1e-6,1e-3,1], lo };
+  const g = el('g',{},svg);
+  const t1 = el('text',{x:x0,y:yTop-10,fill:C('--ink-1'),'font-size':'13','font-weight':'600'},g);
+  txt(t1,'All series, indexed: share of 2026 level (log scale)');
+  for (const tk of Y.ticks){
+    const y=Y.pos(tk);
+    el('line',{x1:x0,x2:x1,y1:y,y2:y,stroke:C('--grid'),'stroke-width':1},g);
+    const lab=el('text',{x:x0-8,y:y+3.5,'text-anchor':'end',fill:C('--ink-3'),'font-size':'11'},g);
+    txt(lab, tk===1?'100%':tk>=1e-3? (tk*100)+'%' : '10⁻'+Math.round(-L(tk)-2)+'%');
+  }
+  for (const tk of X.ticks){
+    const x=X.pos(tk); if(x<x0-1||x>x1+1) continue;
+    el('line',{x1:x,x2:x,y1:yBot,y2:yBot+4,stroke:C('--axis'),'stroke-width':1},g);
+    txt(el('text',{x,y:yBot+16,'text-anchor':'middle',fill:C('--ink-3'),'font-size':'11'},g), fmtYear(tk));
+  }
+  el('line',{x1:x0,x2:x1,y1:yBot,y2:yBot,stroke:C('--axis'),'stroke-width':1},g);
+  for (const s of SERIES){
+    const d = DATA[s.id];
+    const last = d.v[d.v.length-1];
+    const norm = i => d.v[i]==null? null : Math.max(d.v[i]/last, lo);
+    let run=[],runCls=null;
+    const color=C(s.css);
+    const flush=()=>{ if(run.length>1){ const p=el('path',{d:pathFrom(run),fill:'none',stroke:color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'},g); if(runCls==='dash'){p.setAttribute('stroke-dasharray','5 4');p.setAttribute('opacity','0.85');} } run=run.length?[run[run.length-1]]:[]; };
+    for (const i of idx){
+      const v=norm(i);
+      if (v==null){ flush(); run=[]; runCls=null; continue; }
+      const cls=provClass(d.prov[i]);
+      if (runCls!==null && cls!==runCls) flush();
+      runCls=cls;
+      run.push([X.pos(YEARS[i]), Y.pos(v)]);
+    }
+    flush();
+    // no end labels: all series converge to 100% at the right edge by
+    // construction — the legend row above carries identity.
+  }
+  geo.panels.push({ s:{id:'overlay', name:'Indexed overlay', fmt:v=>v, log:true}, Y, yTop, yBot });
+}
+
+// ---------- crosshair & tooltip ----------
+const tt = document.getElementById('tt');
+let chLine=null;
+function drawCrosshairLayer(C){
+  chLine = el('line',{x1:0,x2:0,y1:MARGIN.t,y2:geo.totalH-MARGIN.b,stroke:C('--ink-3'),
+    'stroke-width':1, opacity:0, 'pointer-events':'none'},svg);
+  const hit = el('rect',{x:geo.x0,y:0,width:geo.x1-geo.x0,height:geo.totalH,fill:'transparent'},svg);
+  hit.addEventListener('pointermove', onMove);
+  hit.addEventListener('pointerleave', ()=>{ chLine.setAttribute('opacity',0); tt.style.display='none'; });
+}
+function nearestIndex(px){
+  let best=0, bd=Infinity;
+  for (const i of geo.idx){
+    const d=Math.abs(geo.X.pos(YEARS[i])-px);
+    if (d<bd){ bd=d; best=i; }
+  }
+  return best;
+}
+function onMove(ev){
+  const r = svg.getBoundingClientRect();
+  const scale = r.width / geo.width;
+  const px = (ev.clientX - r.left)/scale;
+  const i = nearestIndex(px);
+  const x = geo.X.pos(YEARS[i]);
+  chLine.setAttribute('x1',x); chLine.setAttribute('x2',x); chLine.setAttribute('opacity',0.5);
+  // build tooltip
+  tt.innerHTML='';
+  const yh = document.createElement('div'); yh.className='tt-year'; yh.textContent=fmtYear(YEARS[i]);
+  tt.appendChild(yh);
+  const tab = document.createElement('table');
+  const css = getComputedStyle(document.querySelector('.viz-root'));
+  const provName = {o:'observed', a:'anchor', r:'reconstructed'};
+  for (const s of SERIES){
+    const d = DATA[s.id];
+    if (d.v[i]==null) continue;
+    const tr = document.createElement('tr');
+    const k = document.createElement('td'); k.className='tt-key';
+    const sw = document.createElement('span'); sw.style.background = css.getPropertyValue(s.css).trim();
+    k.appendChild(sw);
+    const val = document.createElement('td'); val.className='tt-val'; val.textContent = s.fmt(d.v[i]);
+    const nm = document.createElement('td'); nm.className='tt-name'; nm.textContent = s.name;
+    const pv = document.createElement('td'); pv.className='tt-prov'; pv.textContent = provName[d.prov[i]]||'';
+    tr.append(k,val,nm,pv); tab.appendChild(tr);
+  }
+  tt.appendChild(tab);
+  tt.style.display='block';
+  const tw = tt.offsetWidth, thh = tt.offsetHeight;
+  let lx = ev.clientX+14, ly = ev.clientY+12;
+  if (lx+tw > innerWidth-8) lx = ev.clientX-tw-14;
+  if (ly+thh > innerHeight-8) ly = innerHeight-thh-8;
+  tt.style.left=lx+'px'; tt.style.top=ly+'px';
+}
+
+// ---------- controls ----------
+function buildControls(){
+  const rb = document.getElementById('rangeBtns');
+  for (const r of RANGES){
+    const b=document.createElement('button');
+    b.textContent=r.label; b.setAttribute('aria-pressed', String(state.range===r.key));
+    b.onclick=()=>{ state.range=r.key; syncButtons(); render(); };
+    b.dataset.key=r.key; rb.appendChild(b);
+  }
+  const mb=document.getElementById('modeBtns');
+  for (const [key,label] of [['panels','Panels'],['overlay','Indexed overlay']]){
+    const b=document.createElement('button');
+    b.textContent=label; b.setAttribute('aria-pressed', String(state.mode===key));
+    b.onclick=()=>{ state.mode=key; syncButtons(); render(); };
+    b.dataset.mode=key; mb.appendChild(b);
+  }
+  document.getElementById('themeBtn').onclick=()=>{
+    const root=document.documentElement;
+    const cur=root.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    root.dataset.theme = cur==='dark'?'light':'dark';
+    render();
+    buildProvLegend();
+  };
+}
+function syncButtons(){
+  document.querySelectorAll('#rangeBtns button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.key===state.range)));
+  document.querySelectorAll('#modeBtns button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mode===state.mode)));
+}
+
+// ---------- provenance legend ----------
+function buildProvLegend(){
+  const pl = document.getElementById('provLegend');
+  const css = getComputedStyle(document.querySelector('.viz-root'));
+  const ink = css.getPropertyValue('--ink-2').trim();
+  pl.innerHTML =
+    `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${ink}" stroke-width="2"/></svg> observed (annual source data)</span>`+
+    `<span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="${ink}" stroke-width="2" stroke-dasharray="5 4"/></svg> reconstructed (model between anchors)</span>`+
+    `<span><svg width="12" height="12"><circle cx="6" cy="6" r="4" fill="${ink}"/></svg> literature anchor point</span>`+
+    `<span><svg width="26" height="12"><rect x="1" y="1" width="24" height="10" fill="${ink}" opacity="0.12"/></svg> uncertainty / definitional range</span>`;
+  const parts = SERIES.map(s=>{
+    const c = css.getPropertyValue(s.css).trim();
+    return `<span><span class="key-dot" style="background:${c}"></span>${s.name}</span>`;
+  });
+  pl.innerHTML += parts.join('');
+}
+
+// ---------- data table ----------
+function buildTable(){
+  const t = document.getElementById('dataTable');
+  const rows = [];
+  const milestones = YEARS.filter(y=> (y<=1000 ? y%1000===0 : y<1900 ? y%100===0 : y%10===0) || y===NOW);
+  let html = '<tr><th>Year</th>'+SERIES.map(s=>`<th>${s.name}</th>`).join('')+'</tr>';
+  for (const y of milestones){
+    const i = YEARS.indexOf(y);
+    if (i<0) continue;
+    html += `<tr><td>${fmtYear(y)}</td>`+SERIES.map(s=>{
+      const v = DATA[s.id].v[i];
+      return `<td>${v==null?'—':s.fmt(v)}</td>`;
+    }).join('')+'</tr>';
+  }
+  t.innerHTML = html;
+}
+
+// ---------- footer methodology ----------
+function buildFooter(){
+  document.getElementById('chartNote').innerHTML =
+    'Y-axes are logarithmic (except the index). “Deep time” view compresses the x-axis by log(years before present). '+
+    'Hollow gray dots: CAS Registry milestones — the broader registry definition of “substance” (mixtures, polymers, sequences), '+
+    'reaching >290M by 2025 vs ~20M literature-reported compounds; the definitional gap is part of the story. '+
+    'Hover or focus for exact values; every plotted value is also in the table view and <code>data/series_annual.csv</code>.';
+  document.getElementById('methodology').innerHTML = /*__METHODS__*/'';
+}
+
+buildControls();
+buildTable();
+buildFooter();
+render();
+buildProvLegend();
+addEventListener('resize', ()=>render());
+</script>
