@@ -1,0 +1,95 @@
+<title>1800–2026, linear, indexed to 2026</title>
+<style>
+  body { margin:0; background:#f9f9f7; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color:#0b0b0b; }
+  .card { background:#fcfcfb; border:1px solid rgba(11,11,11,0.10); border-radius:12px; padding:22px 24px 18px; margin:20px; }
+  h1 { font-size:17px; font-weight:650; margin:0 0 2px; }
+  .sub { color:#52514e; font-size:12.5px; margin:0 0 12px; }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; font-size:12.5px; color:#52514e; margin-bottom:6px; align-items:center; }
+  .kd { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+  .prov { display:flex; gap:16px; font-size:11.5px; color:#898781; margin-bottom:10px; align-items:center; }
+  svg { display:block; width:100%; }
+  .vals { border-top:1px solid #e1e0d9; margin-top:12px; padding-top:10px; font-size:12.5px; color:#52514e; }
+  .vals b { color:#0b0b0b; font-weight:650; }
+</style>
+<div class="card" id="card">
+  <h1>The Expanding Human Toolkit, 1800 → 2026</h1>
+  <p class="sub">Linear scales; every series shown as a percentage of its 2026 value (top-right corner = 100%). Dashed = model reconstruction; solid = annual source data underlies the curve.</p>
+  <div class="legend" id="legend"></div>
+  <svg id="chart" viewBox="0 0 1120 460"></svg>
+  <div class="vals" id="vals"></div>
+</div>
+<script>
+const DATA = __PAYLOAD__;
+const SERIES = [
+  { id:'substances', name:'Substances & materials known', color:'#2a78d6', v2026:'23.0 million known' },
+  { id:'materials', name:'Global material extraction', color:'#1baf7a', v2026:'108 Gt extracted/yr' },
+  { id:'publications', name:'Research publications', color:'#4a3aa7', v2026:'4.09 million papers/yr' },
+  { id:'gii', name:'Global Interconnectedness Index', color:'#008300', v2026:'index = 100' },
+];
+const YEARS = DATA.substances.years;
+const NS='http://www.w3.org/2000/svg';
+const svg = document.getElementById('chart');
+function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;}
+function txt(e,s){e.textContent=s;return e;}
+const x0=58, x1=1076, yTop=14, yBot=414;
+const X = y => x0 + (y-1800)/(2026-1800)*(x1-x0);
+const Y = p => yBot - p/100*(yBot-yTop);
+// grid + axes
+for (const p of [0,25,50,75,100]){
+  el('line',{x1:x0,x2:x1,y1:Y(p),y2:Y(p),stroke:'#e1e0d9','stroke-width':1});
+  txt(el('text',{x:x0-8,y:Y(p)+4,'text-anchor':'end',fill:'#898781','font-size':'12'}), p+'%');
+}
+for (let t=1800; t<=2026; t+=25){
+  const tt = t===2025?2026:t;
+  el('line',{x1:X(tt),x2:X(tt),y1:yBot,y2:yBot+4,stroke:'#c3c2b7','stroke-width':1});
+  txt(el('text',{x:X(tt),y:yBot+19,'text-anchor':'middle',fill:'#898781','font-size':'12'}), tt);
+  if (t===2025) break;
+}
+el('line',{x1:x0,x2:x1,y1:yBot,y2:yBot,stroke:'#c3c2b7','stroke-width':1});
+// series
+const iStart = YEARS.indexOf(1800);
+for (const s of SERIES){
+  const d = DATA[s.id];
+  const last = d.v[d.v.length-1];
+  let run=[], runDash=null;
+  const flush=()=>{
+    if (run.length>1){
+      const p = el('path',{d:'M'+run.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join('L'),
+        fill:'none',stroke:s.color,'stroke-width':2.25,'stroke-linejoin':'round','stroke-linecap':'round'});
+      if (runDash){ p.setAttribute('stroke-dasharray','6 4'); p.setAttribute('opacity','0.85'); }
+    }
+    run = run.length?[run[run.length-1]]:[];
+  };
+  for (let i=iStart;i<YEARS.length;i++){
+    if (d.v[i]==null){ flush(); run=[]; runDash=null; continue; }
+    const dash = d.prov[i]!=='o';
+    if (runDash!==null && dash!==runDash) flush();
+    runDash = dash;
+    run.push([X(YEARS[i]), Y(d.v[i]/last*100)]);
+  }
+  flush();
+}
+// direct labels at divergent midpoints (measured to avoid collisions)
+const LBL = [
+  ['gii','Interconnectedness', 1908, 10, -8],
+  ['materials','Material extraction', 1953, 8, -8],
+  ['publications','Publications', 1988, 12, 14],
+  ['substances','Substances known', 2003, -20, 26],
+];
+for (const [id,short,yr,dx,dy] of LBL){
+  const s = SERIES.find(q=>q.id===id);
+  const d = DATA[id];
+  const i = YEARS.indexOf(yr);
+  const px = X(yr), py = Y(d.v[i]/d.v[d.v.length-1]*100);
+  el('circle',{cx:px,cy:py,r:3.5,fill:s.color,stroke:'#fcfcfb','stroke-width':2});
+  const anchor = dx<0?'end':'start';
+  txt(el('text',{x:px+dx,y:py+dy,fill:'#52514e','font-size':'12','font-weight':'600','text-anchor':anchor}), short);
+}
+// legend & values
+document.getElementById('legend').innerHTML = SERIES.map(s=>
+  `<span><span class="kd" style="background:${s.color}"></span>${s.name}</span>`).join('');
+document.getElementById('vals').innerHTML =
+  '<b>2026 values (each = 100%):</b> &nbsp;' + SERIES.map(s=>
+  `<span class="kd" style="background:${s.color}"></span><b>${s.v2026}</b>`).join(' &nbsp;·&nbsp; ') +
+  '<br><span style="color:#898781">Sources: Llanos et al. 2019 (PNAS) + CAS; Krausmann et al. 2009/2018 + UNEP IRP; Royal Society Catalogue, Björk 2009, NSB Indicators, Bornmann et al. 2021; composite index per docs/METHODOLOGY.md (2026 = 100 by construction).</span>';
+</script>
